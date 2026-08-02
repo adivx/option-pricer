@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "option-pricer"
+version = "0.1.0"
+description = "Black-Scholes European option pricer with full Greeks — zero-compiled-deps CLI"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = ["rich>=13"]
+
+[project.scripts]
+option-pricer = "pricer.cli:main"
+
+[tool.setuptools]
+packages = ["pricer"]
