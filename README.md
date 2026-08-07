@@ -1,4 +1,12 @@
 # option-pricer
+<p align="center">
+  <a href="https://github.com/adivx/option-pricer/actions"><img src="https://img.shields.io/github/actions/workflow/status/adivx/option-pricer/ci.yml?branch=main&label=CI&logo=github" /></a>
+  <img src="https://img.shields.io/github/license/adivx/option-pricer" />
+  <img src="https://img.shields.io/github/last-commit/adivx/option-pricer" />
+  <img src="https://img.shields.io/github/repo-size/adivx/option-pricer" />
+</p>
+
+
 
 A dependency-light **Black-Scholes option pricer** with full **Greeks**, shipped as a pretty terminal CLI. Type a few numbers — get call/put prices, delta/gamma/vega/theta/rho, and a sensitivity scan — without a single API key.
 
