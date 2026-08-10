@@ -119,6 +119,69 @@ class TestGreeks(unittest.TestCase):
         self.assertAlmostEqual(d2, d1 - self.SIG * math.sqrt(self.T), places=12)
 
 
+class TestGreeksFiniteDiff(unittest.TestCase):
+    """Cross-check the closed-form Greeks against numeric central differences.
+
+    h=1e-5 gives O(h^2) central-difference error, so agreement to ~6 places
+    means the analytic formulas (and their market scalings) are right.
+    """
+    S, K, T, R, SIG = 100.0, 105.0, 0.5, 0.04, 0.25
+    H = 1e-5
+
+    def _c(self, **kw):
+        p = dict(spot=self.S, strike=self.K, t=self.T, r=self.R, sigma=self.SIG)
+        p.update(kw)
+        return price(**p, option_type="call")
+
+    def test_delta_call_matches_central_difference(self):
+        d = (self._c(spot=self.S + self.H) - self._c(spot=self.S - self.H)) / (2 * self.H)
+        self.assertAlmostEqual(greeks(self.S, self.K, self.T, self.R, self.SIG)["delta_call"], d, places=6)
+
+    def test_delta_put_matches_central_difference(self):
+        p_plus = price(self.S + self.H, self.K, self.T, self.R, self.SIG, "put")
+        p_minus = price(self.S - self.H, self.K, self.T, self.R, self.SIG, "put")
+        d = (p_plus - p_minus) / (2 * self.H)
+        self.assertAlmostEqual(greeks(self.S, self.K, self.T, self.R, self.SIG)["delta_put"], d, places=6)
+
+    def test_gamma_matches_delta_difference(self):
+        # Second difference of prices suffers cancellation in double precision;
+        # differencing delta (a first difference of a smooth function) is stable.
+        d_up = greeks(self.S + self.H, self.K, self.T, self.R, self.SIG)["delta_call"]
+        d_dn = greeks(self.S - self.H, self.K, self.T, self.R, self.SIG)["delta_call"]
+        g = (d_up - d_dn) / (2 * self.H)
+        self.assertAlmostEqual(greeks(self.S, self.K, self.T, self.R, self.SIG)["gamma"], g, places=6)
+
+    def test_vega_raw_matches_central_difference(self):
+        # vega_raw is dC/d(sigma) at full scale; vega is that /100.
+        v = (self._c(sigma=self.SIG + self.H) - self._c(sigma=self.SIG - self.H)) / (2 * self.H)
+        self.assertAlmostEqual(greeks(self.S, self.K, self.T, self.R, self.SIG)["vega_raw"], v, places=6)
+
+    def test_theta_call_raw_matches_central_difference(self):
+        # Finite difference in remaining time gives +dC/dT (more time -> more
+        # value), but the analytic theta is the calendar-time decay, i.e. the
+        # negative of that. theta_call is the raw per-year value / 365.
+        th = -(self._c(t=self.T + self.H) - self._c(t=self.T - self.H)) / (2 * self.H)
+        self.assertAlmostEqual(greeks(self.S, self.K, self.T, self.R, self.SIG)["theta_call_raw"], th, places=6)
+
+    def test_rho_call_raw_matches_central_difference(self):
+        # rho is dC/dr; rho_call is that /100 (per 1% move).
+        rho = (self._c(r=self.R + self.H) - self._c(r=self.R - self.H)) / (2 * self.H)
+        self.assertAlmostEqual(greeks(self.S, self.K, self.T, self.R, self.SIG)["rho_call_raw"], rho, places=6)
+
+    def test_rho_put_raw_matches_central_difference(self):
+        p_plus = price(self.S, self.K, self.T, self.R + self.H, self.SIG, "put")
+        p_minus = price(self.S, self.K, self.T, self.R - self.H, self.SIG, "put")
+        rho = (p_plus - p_minus) / (2 * self.H)
+        self.assertAlmostEqual(greeks(self.S, self.K, self.T, self.R, self.SIG)["rho_put_raw"], rho, places=6)
+
+    def test_market_scalings_consistent(self):
+        g = greeks(self.S, self.K, self.T, self.R, self.SIG)
+        self.assertAlmostEqual(g["vega"] * 100.0, g["vega_raw"], places=12)
+        self.assertAlmostEqual(g["theta_call"] * 365.0, g["theta_call_raw"], places=12)
+        self.assertAlmostEqual(g["rho_call"] * 100.0, g["rho_call_raw"], places=12)
+        self.assertAlmostEqual(g["rho_put"] * 100.0, g["rho_put_raw"], places=12)
+
+
 class TestImpliedVol(unittest.TestCase):
     S, K, T, R, SIG = 100.0, 100.0, 1.0, 0.05, 0.20
 
