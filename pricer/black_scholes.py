@@ -64,6 +64,36 @@ def price(
     raise ValueError("option_type must be 'call' or 'put'")
 
 
+def implied_vol(spot: float, strike: float, t: float, r: float,
+                market_price: float, option_type: str = "call",
+                lo: float = 1e-4, hi: float = 5.0, tol: float = 1e-8) -> float:
+    """Invert :func:`price` for the implied volatility via bisection.
+
+    The price is strictly increasing in sigma (vega > 0 everywhere), so
+    bisection on [lo, hi] is safe and deterministic — no derivatives, no
+    seeds. Raises ValueError when the market price sits outside the
+    achievable range: below the sigma -> 0 no-arbitrage bound (which would
+    be free money), or above the sigma = hi ceiling.
+    """
+    p_lo = price(spot, strike, t, r, lo, option_type)
+    p_hi = price(spot, strike, t, r, hi, option_type)
+    if market_price < p_lo - tol:
+        raise ValueError("market price below the no-arbitrage lower bound")
+    if market_price > p_hi + tol:
+        raise ValueError("market price above the achievable range "
+                         f"(vol > {hi * 100:.0f}%)")
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        p_mid = price(spot, strike, t, r, mid, option_type)
+        if (hi - lo) / 2.0 < tol:
+            break
+        if p_mid > market_price:
+            hi = mid
+        else:
+            lo = mid
+    return 0.5 * (lo + hi)
+
+
 def greeks(spot: float, strike: float, t: float, r: float, sigma: float) -> dict:
     """All first- and second-order Greeks.
 

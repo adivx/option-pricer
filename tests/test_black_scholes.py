@@ -6,6 +6,7 @@ import unittest
 from pricer.black_scholes import (
     d1_d2,
     greeks,
+    implied_vol,
     norm_cdf,
     norm_pdf,
     parity_residual,
@@ -99,6 +100,30 @@ class TestGreeks(unittest.TestCase):
     def test_d1_d2_relation(self):
         d1, d2 = d1_d2(self.S, self.K, self.T, self.R, self.SIG)
         self.assertAlmostEqual(d2, d1 - self.SIG * math.sqrt(self.T), places=12)
+
+
+class TestImpliedVol(unittest.TestCase):
+    S, K, T, R, SIG = 100.0, 100.0, 1.0, 0.05, 0.20
+
+    def test_recovers_known_call_vol(self):
+        c = price(self.S, self.K, self.T, self.R, self.SIG, "call")
+        iv = implied_vol(self.S, self.K, self.T, self.R, c, "call")
+        self.assertAlmostEqual(iv, self.SIG, places=6)
+
+    def test_recovers_known_put_vol(self):
+        p = price(self.S, self.K, self.T, self.R, self.SIG, "put")
+        iv = implied_vol(self.S, self.K, self.T, self.R, p, "put")
+        self.assertAlmostEqual(iv, self.SIG, places=6)
+
+    def test_monotonic_in_market_price(self):
+        lo_iv = implied_vol(self.S, self.K, self.T, self.R, 10.0, "call")
+        hi_iv = implied_vol(self.S, self.K, self.T, self.R, 15.0, "call")
+        self.assertGreater(hi_iv, lo_iv)
+
+    def test_below_no_arbitrage_bound_raises(self):
+        # S=100, K=90, r=0: the call cannot trade below its intrinsic 10.
+        with self.assertRaises(ValueError):
+            implied_vol(100.0, 90.0, 1.0, 0.0, 5.0, "call")
 
 
 if __name__ == "__main__":

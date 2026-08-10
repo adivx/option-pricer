@@ -16,7 +16,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from . import __version__
-from .black_scholes import greeks, parity_residual, price
+from .black_scholes import greeks, implied_vol, parity_residual, price
 from .models import OptionParams, parse_rate_or_vol, parse_time
 
 console = Console()
@@ -187,6 +187,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--r", type=str, metavar="R", help="risk-free rate, decimal or percent")
     parser.add_argument("--vol", type=str, metavar="V", help="implied volatility, decimal or percent")
     parser.add_argument("--scan", choices=["spot", "vol", "time"], help="print a sensitivity table instead of a single quote")
+    parser.add_argument("--iv", type=float, metavar="PRICE",
+                        help="market price to invert for implied volatility "
+                             "(with spot/strike/t/r)")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser
 
@@ -195,6 +198,12 @@ def main(argv=None) -> None:
     try:
         args = build_arg_parser().parse_args(argv)
         params = _resolve_params(args)
+        if args.iv is not None:
+            iv = implied_vol(params.spot, params.strike, params.t, params.r,
+                             args.iv)
+            console.print(f"[bold cyan]Implied vol:[/] {iv * 100:.2f}%  "
+                          f"(market price ${args.iv:,.2f})")
+            return
         if args.scan:
             render_scan(params, args.scan)
         else:

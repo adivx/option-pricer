@@ -31,6 +31,15 @@ class TestQuote(unittest.TestCase):
             main(BASIC + ["--scan", "vol"])
         self.assertIn("Vol", buf.getvalue())
 
+    def test_iv_flag_solves_for_vol(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--spot", "100", "--strike", "100", "--t", "1y",
+                  "--r", "5%", "--vol", "20%", "--iv", "10.4505835722"])
+        out = buf.getvalue()
+        self.assertIn("Implied vol", out)
+        self.assertIn("20.00%", out)
+
 
 class TestErrors(unittest.TestCase):
     def test_bad_time_exits_2(self):
