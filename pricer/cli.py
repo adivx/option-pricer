@@ -8,6 +8,7 @@ one-shot quote:
 """
 
 import argparse
+import re
 
 from rich import box
 from rich.console import Console
@@ -196,9 +197,29 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _join_negative_percent(argv) -> list:
+    """argparse's negative-number matcher only accepts bare numerics, so a
+    space-separated negative percent (``--r -5%``) is rejected as an unknown
+    flag even though ``--r=-5%`` works. Rewrite those two tokens into the
+    ``--flag=value`` form before parsing."""
+    out = []
+    i = 0
+    while i < len(argv):
+        tok = argv[i]
+        if tok in ("--r", "--vol") and i + 1 < len(argv):
+            nxt = argv[i + 1]
+            if re.fullmatch(r"-\d+(\.\d+)?%", nxt):
+                out.append(f"{tok}={nxt}")
+                i += 2
+                continue
+        out.append(tok)
+        i += 1
+    return out
+
+
 def main(argv=None) -> None:
     try:
-        args = build_arg_parser().parse_args(argv)
+        args = build_arg_parser().parse_args(_join_negative_percent(argv or []))
         params = _resolve_params(args)
         if args.iv is not None:
             iv = implied_vol(params.spot, params.strike, params.t, params.r,
@@ -210,7 +231,7 @@ def main(argv=None) -> None:
             render_scan(params, args.scan)
         else:
             render_quote(params)
-    except ValueError as exc:
+    except (ValueError, OverflowError) as exc:
         console.print(f"[red]Error:[/] {exc}")
         raise SystemExit(2) from None
 

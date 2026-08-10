@@ -4,7 +4,7 @@ import io
 import unittest
 from contextlib import redirect_stdout
 
-from pricer.cli import build_arg_parser, main
+from pricer.cli import _join_negative_percent, build_arg_parser, main
 
 BASIC = ["--spot", "100", "--strike", "105", "--t", "90d",
          "--r", "5%", "--vol", "20%"]
@@ -52,6 +52,35 @@ class TestErrors(unittest.TestCase):
         with self.assertRaises(SystemExit) as ctx:
             main(["--spot", "100", "--strike", "105", "--t", "1y",
                   "--r", "five", "--vol", "0.2"])
+        self.assertEqual(ctx.exception.code, 2)
+
+
+class TestNegativePercent(unittest.TestCase):
+    def test_space_form_negative_rate_parses(self):
+        # argparse rejects " --r -5%" as an unknown flag; the preprocessor
+        # rewrites it to "--r=-5%" so negative rates stay usable.
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            main(["--spot", "100", "--strike", "105", "--t", "90d",
+                  "--r", "-5%", "--vol", "20%"])
+        self.assertIn("Call", buf.getvalue())
+
+    def test_join_rewrites_space_form(self):
+        self.assertEqual(_join_negative_percent(["--r", "-5%"]), ["--r=-5%"])
+        self.assertEqual(_join_negative_percent(["--vol", "-20%"]), ["--vol=-20%"])
+
+    def test_join_leaves_other_tokens_alone(self):
+        self.assertEqual(_join_negative_percent(["--spot", "100"]), ["--spot", "100"])
+        self.assertEqual(_join_negative_percent(["--r=-5%"]), ["--r=-5%"])
+
+
+class TestOverflow(unittest.TestCase):
+    def test_huge_expiry_exits_2_not_traceback(self):
+        # r=-50%, t=10000y makes exp(-r*t) = exp(5000) overflow float; the CLI
+        # must surface a clean error instead of a raw traceback.
+        with self.assertRaises(SystemExit) as ctx:
+            main(["--spot", "100", "--strike", "105", "--t", "10000y",
+                  "--r", "-50%", "--vol", "20%"])
         self.assertEqual(ctx.exception.code, 2)
 
 
