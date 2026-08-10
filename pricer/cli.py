@@ -100,7 +100,7 @@ def render_quote(p: OptionParams) -> None:
     table = Table(box=box.ROUNDED, title="Black-Scholes Valuation")
     table.add_column("Side", style="bold")
     table.add_column("Price", justify="right")
-    for name in ("Delta", "Gamma", "Vega", "Theta/day", "Rho"):
+    for name in ("Delta", "Gamma", "Vega", "Theta/day", "Rho", "P(ITM)"):
         table.add_column(name, justify="right")
 
     table.add_row(
@@ -111,6 +111,7 @@ def render_quote(p: OptionParams) -> None:
         f"{g['vega']:+.4f}",
         f"{g['theta_call']:+.4f}",
         f"{g['rho_call']:+.4f}",
+        f"{g['p_itm_call'] * 100:.1f}%",
     )
     table.add_row(
         "Put",
@@ -120,6 +121,7 @@ def render_quote(p: OptionParams) -> None:
         f"{g['vega']:+.4f}",
         f"{g['theta_put']:+.4f}",
         f"{g['rho_put']:+.4f}",
+        f"{g['p_itm_put'] * 100:.1f}%",
     )
     console.print(table)
 

@@ -97,6 +97,23 @@ class TestGreeks(unittest.TestCase):
         self.assertAlmostEqual(g["theta_call"] * 365.0, g["theta_call_raw"], places=9)
         self.assertAlmostEqual(g["vega"] * 100.0, g["vega_raw"], places=9)
 
+    def test_p_itm_complements(self):
+        g = greeks(self.S, self.K, self.T, self.R, self.SIG)
+        self.assertAlmostEqual(g["p_itm_call"] + g["p_itm_put"], 1.0, places=12)
+
+    def test_p_itm_equals_n_of_d2(self):
+        _, d2 = d1_d2(self.S, self.K, self.T, self.R, self.SIG)
+        g = greeks(self.S, self.K, self.T, self.R, self.SIG)
+        self.assertAlmostEqual(g["p_itm_call"], norm_cdf(d2), places=12)
+
+    def test_deep_itm_call_probability_high(self):
+        g = greeks(200.0, 100.0, 1.0, 0.05, 0.20)
+        self.assertGreater(g["p_itm_call"], 0.9)
+
+    def test_deep_otm_call_probability_low(self):
+        g = greeks(100.0, 200.0, 1.0, 0.05, 0.20)
+        self.assertLess(g["p_itm_call"], 0.1)
+
     def test_d1_d2_relation(self):
         d1, d2 = d1_d2(self.S, self.K, self.T, self.R, self.SIG)
         self.assertAlmostEqual(d2, d1 - self.SIG * math.sqrt(self.T), places=12)

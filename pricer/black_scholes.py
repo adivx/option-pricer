@@ -110,6 +110,10 @@ def greeks(spot: float, strike: float, t: float, r: float, sigma: float) -> dict
     delta_put = delta_call - 1.0
     gamma = pdf / (spot * sigma * sqrt_t)
 
+    # Probability the option finishes in the money: P(S_T > K) = N(d2).
+    p_itm_call = norm_cdf(d2)
+    p_itm_put = norm_cdf(-d2)
+
     vega_raw = spot * pdf * sqrt_t          # P&L per +1.0 in sigma
     theta_first = -(spot * pdf * sigma) / (2 * sqrt_t)  # shared first term
 
@@ -122,6 +126,8 @@ def greeks(spot: float, strike: float, t: float, r: float, sigma: float) -> dict
     return {
         "delta_call": delta_call,
         "delta_put": delta_put,
+        "p_itm_call": p_itm_call,
+        "p_itm_put": p_itm_put,
         "gamma": gamma,
         "vega": vega_raw / 100.0,
         "vega_raw": vega_raw,
