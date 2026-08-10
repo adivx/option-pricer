@@ -59,6 +59,9 @@ option-pricer --spot 100 --strike 105 --t 90d --r 5% --vol 20%
 # NIFTY-style example, spot sensitivity table
 option-pricer --spot 5400 --strike 5500 --t 0.25 --r 6.5% --vol 14% --scan spot
 
+# Solve for the implied vol that prices the market quote
+option-pricer --spot 100 --strike 105 --t 90d --r 5% --vol 20% --iv 3.5
+
 # Run without flags → interactive prompt
 option-pricer
 ```
@@ -71,6 +74,7 @@ option-pricer
 | `--r R` | Risk-free rate | `0.05` or `5%` |
 | `--vol V` | Implied volatility | `0.2` or `20%` |
 | `--scan {spot,vol,time}` | Sensitivity table instead of a quote | `--scan vol` |
+| `--iv PRICE` | Invert a market price for implied vol (with spot/strike/t/r) | `--iv 3.5` |
 
 ## The math
 
@@ -112,7 +116,7 @@ pricer/
 
 ## Roadmap
 
-- [ ] Implied-volatility solver (Newton/bisection) → build a vol smile
+- [x] Implied-volatility solver (bisection, `--iv`) → next: a vol smile
 - [ ] Binomial/trinomial tree for **American** options (early-exercise + dividends)
 - [ ] yfinance integration to price real strikes and build a live surface
 - [ ] Plot Greeks across spot/vol in the terminal
