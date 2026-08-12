@@ -8,7 +8,7 @@
 
 
 
-A dependency-light **Black-Scholes option pricer** with full **Greeks**, shipped as a pretty terminal CLI. Type a few numbers — get call/put prices, delta/gamma/vega/theta/rho, and a sensitivity scan — without a single API key.
+A zero-compiled-deps **Black-Scholes option pricer** with full **Greeks**, shipped as a pretty terminal CLI. Type a few numbers — get call/put prices, delta/gamma/vega/theta/rho, and a sensitivity scan — without a single API key.
 
 ```
 $ option-pricer --spot 100 --strike 105 --t 90d --r 5% --vol 20%
