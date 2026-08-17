@@ -1,4 +1,8 @@
-"""Input model and friendly parsing for the CLI."""
+"""Input model and friendly parsing for the CLI.
+
+Parses human-friendly strings like ``90d``, ``3m``, ``5%`` into the
+decimal/year floats that the Black-Scholes engine expects.
+"""
 
 import re
 from dataclasses import dataclass
@@ -41,6 +45,10 @@ def parse_rate_or_vol(value: str) -> float:
 
 @dataclass
 class OptionParams:
+    """Normalized option parameters ready for the pricing engine.
+
+    All fields are in the internal units: years for time, decimals for rates/vol.
+    """
     spot: float
     strike: float
     t: float      # years

@@ -28,6 +28,7 @@ def norm_cdf(x: float) -> float:
 
 
 def _validate(spot: float, strike: float, t: float, r: float, sigma: float) -> None:
+    """Raise ValueError if any parameter violates arbitrage constraints."""
     if spot <= 0:
         raise ValueError("spot must be > 0")
     if strike <= 0:
